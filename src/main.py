@@ -22,9 +22,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Basic args_
     parser.add_argument("-mode", default='train', type=str, choices=['train', 'test'])
-    parser.add_argument("-data_path", default='data', type=str)
-    parser.add_argument("-model_path", default='models', type=str)
-    parser.add_argument("-result_path", default='results', type=str)
+    parser.add_argument("-data_path", default='../data', type=str)
+    parser.add_argument("-model_path", default='../models', type=str)
+    parser.add_argument("-result_path", default='../results', type=str)
     parser.add_argument('-task', default='qqp', type=str, choices=['qqp', 'mrpc', 'medical'])
     parser.add_argument('-visible_gpus', default='0', type=str)
     parser.add_argument('-seed', default=666, type=int)
@@ -32,16 +32,16 @@ if __name__ == '__main__':
 
     # Batch sizes
     parser.add_argument("-batch_size", default=16, type=int)
-    parser.add_argument("-test_batch_size", default=64, type=int)
+    parser.add_argument("-test_batch_size", default=128, type=int)
 
     # Model args
     parser.add_argument("-baseline", type=str2bool, nargs='?', const=True, default=False)
-    parser.add_argument("-model", default="", type=str)
+    parser.add_argument("-model", default="roberta-large", type=str)
     parser.add_argument("-num_labels", default=2, type=int)
 
     # Training process args
     parser.add_argument("-save_checkpoint_steps", default=2000, type=int)
-    parser.add_argument("-accum_count", default=4, type=int)
+    parser.add_argument("-accum_count", default=1, type=int)
     parser.add_argument("-report_every", default=5, type=int)
     parser.add_argument("-train_steps", default=50000, type=int)
 
