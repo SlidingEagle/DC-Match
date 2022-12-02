@@ -22,7 +22,7 @@ def init_logger(log_file=None, log_file_level=logging.NOTSET):
         # sys.path.append(Path(log_file))
 
 
-        file_handler = logging.FileHandler(Path(log_file))
+        file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(log_file_level)
         file_handler.setFormatter(log_format)
         logger.addHandler(file_handler)

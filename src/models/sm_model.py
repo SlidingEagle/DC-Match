@@ -73,7 +73,7 @@ class Model(nn.Module):
             )
 
         # build mask
-        # 16 * length
+        # batch * length
         kw_mask = keyword_mask + special_mask
         con_mask = context_mask + special_mask
 
@@ -85,7 +85,7 @@ class Model(nn.Module):
         #loss1
         # cls logits
         if "pooler_output" in output_all.keys():
-            # logits_all:(16 * 2)
+            # logits_all:(batch * 2)
             logits_all = self.classifier(self.dropout(output_all.pooler_output))
             logits_kw = self.classifier(self.dropout(output_kw.pooler_output))
             logits_con = self.classifier(self.dropout(output_con.pooler_output))
@@ -100,9 +100,9 @@ class Model(nn.Module):
 
         # loss2
         # get mean pooling states
-        # all_kw:(16 * 1024)
-        # last_hidden_state:(16 * 80 * 1024), kw_mask:(16 * 80 * 1), A*B=(16 * 80 * 1024)
-        # sum:(16 * 1024), kw_mask:(16 * 1), sum/kw_mask=(16 * 1024)
+        # all_kw:(batch * 1024)
+        # last_hidden_state:(batch * length * 1024), kw_mask:(batch * length * 1), A*B=(batch * length * 1024)
+        # sum:(batch * 1024), kw_mask:(batch * 1), sum/kw_mask=(batch * 1024)
         all_kw = (output_all.last_hidden_state * kw_mask.unsqueeze(-1).float())\
             .sum(1).div(kw_mask.float().sum(-1).unsqueeze_(-1))
         all_con = (output_all.last_hidden_state * con_mask.unsqueeze(-1).float())\
@@ -113,7 +113,7 @@ class Model(nn.Module):
             .sum(1).div(con_mask.float().sum(-1).unsqueeze_(-1))
 
         # kw_con mean pooling logits
-        # kw_con_logits:(64 * 1)
+        # kw_con_logits:(batch_4 * 1) .cat:(batch_4 * 1024)
         kw_con_logits = self.kw_con_classifier(
             self.dropout(torch.cat([all_kw, sep_kw, all_con, sep_con], 0))
         )
@@ -121,23 +121,23 @@ class Model(nn.Module):
         # loss3
         # joint probability distribution
         # kw_con labels
-        # 64
+        # batch_4
         kw_con_labels = torch.cat([labels.new_ones(all_kw.size(0) * 2),
                                    labels.new_zeros(all_con.size(0) * 2)], 0).float()
 
-        # prob_all:(16 * 2)
+        # prob_all:(batch * 2)
         prob_all = F.log_softmax(logits_all, -1).view(-1, self.label_num)
         prob_kw = F.log_softmax(logits_kw, -1).view(-1, self.label_num)
         prob_con = F.log_softmax(logits_con, -1).view(-1, self.label_num)
-        # prob_joint:(16 * 2 * 2)
+        # prob_joint:(batch * 2 * 2)
         prob_joint = prob_kw.unsqueeze(-1).expand(-1, self.label_num, self.label_num) + \
             prob_con.unsqueeze(-2).expand(-1, self.label_num, self.label_num)
         prob_joint_list = []
         for idx in range(self.label_num):
-            # 16
+            # batch
             prob_dim = prob_joint[:, idx:, idx:].exp().sum((1, 2)) - prob_joint[:, idx+1:, idx+1:].exp().sum((1, 2))
             prob_joint_list.append(prob_dim.unsqueeze(-1))
-        # prob_kw_con:(16 * 2)
+        # prob_kw_con:(batch * 2)
         prob_kw_con = (torch.cat(prob_joint_list, -1)+1e-20).log()
 
         cls_loss = F.cross_entropy(logits_all.view(-1, self.label_num), labels.view(-1))

@@ -19,14 +19,14 @@ if __name__ == '__main__':
     # ['hfl/chinese-macbert-base','hfl/chinese-macbert-large']
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-raw_path", default='raw_data/mrpc', type=str)
+    parser.add_argument("-raw_path", default='../raw_data/mrpc', type=str)
     parser.add_argument("-save_path", default='data', type=str)
     parser.add_argument("-n_cpus", default=4, type=int)
     parser.add_argument("-random_seed", default=666, type=int)
 
     # json_to_data args
     parser.add_argument('-num_class', default=2, type=int)
-    parser.add_argument('-log_file', default='./logs/json_to_data.log')
+    parser.add_argument('-log_file', default='../logs/json_to_data.log')
     parser.add_argument("-tokenizer", default="")
     parser.add_argument('-min_length', default=1, type=int)
     parser.add_argument('-max_length', default=150, type=int)

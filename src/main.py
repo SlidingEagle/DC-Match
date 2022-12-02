@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument("-data_path", default='../data', type=str)
     parser.add_argument("-model_path", default='../models', type=str)
     parser.add_argument("-result_path", default='../results', type=str)
-    parser.add_argument('-task', default='qqp', type=str, choices=['qqp', 'mrpc', 'medical'])
+    parser.add_argument('-task', default='mrpc', type=str, choices=['qqp', 'mrpc', 'medical'])
     parser.add_argument('-visible_gpus', default='0', type=str)
     parser.add_argument('-seed', default=666, type=int)
     parser.add_argument('-loss_type', default=1, type=int)  # For ablation
