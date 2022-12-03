@@ -12,6 +12,7 @@ class Model(nn.Module):
         self.debug = debug
         self.config = AutoConfig.from_pretrained(model_name)
         self.loss_type = loss_type
+        self.improvement = True
 
         if "deberta" in model_name.lower() or "funnel" in model_name.lower():
             self.pooler = nn.Sequential(
@@ -56,7 +57,7 @@ class Model(nn.Module):
         return self
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
-                keyword_mask, context_mask, special_mask, keyword_prompt, attention_mask_keyword_prompt):
+                keyword_mask, context_mask, special_mask, keyword_prompt_ids, attention_mask_keyword_prompt):
 
         if not self.training and not self.debug:
             output_all = self.encoder(input_ids, attention_mask, token_type_ids, return_dict=True)
@@ -82,7 +83,7 @@ class Model(nn.Module):
         output_kw = self.encoder(input_ids, kw_mask, token_type_ids, return_dict=True)
         output_con = self.encoder(input_ids, con_mask, token_type_ids, return_dict=True)
 
-        #loss1
+        # loss1
         # cls logits
         if "pooler_output" in output_all.keys():
             # logits_all:(batch * 2)
@@ -103,27 +104,45 @@ class Model(nn.Module):
         # all_kw:(batch * 1024)
         # last_hidden_state:(batch * length * 1024), kw_mask:(batch * length * 1), A*B=(batch * length * 1024)
         # sum:(batch * 1024), kw_mask:(batch * 1), sum/kw_mask=(batch * 1024)
-        all_kw = (output_all.last_hidden_state * kw_mask.unsqueeze(-1).float())\
-            .sum(1).div(kw_mask.float().sum(-1).unsqueeze_(-1))
-        all_con = (output_all.last_hidden_state * con_mask.unsqueeze(-1).float())\
-            .sum(1).div(con_mask.float().sum(-1).unsqueeze_(-1))
-        sep_kw = (output_kw.last_hidden_state * kw_mask.unsqueeze(-1).float())\
-            .sum(1).div(kw_mask.float().sum(-1).unsqueeze_(-1))
-        sep_con = (output_con.last_hidden_state * con_mask.unsqueeze(-1).float())\
-            .sum(1).div(con_mask.float().sum(-1).unsqueeze_(-1))
+        if not self.improvement:
+            all_kw = (output_all.last_hidden_state * kw_mask.unsqueeze(-1).float())\
+                .sum(1).div(kw_mask.float().sum(-1).unsqueeze_(-1))
+            all_con = (output_all.last_hidden_state * con_mask.unsqueeze(-1).float())\
+                .sum(1).div(con_mask.float().sum(-1).unsqueeze_(-1))
+            sep_kw = (output_kw.last_hidden_state * kw_mask.unsqueeze(-1).float())\
+                .sum(1).div(kw_mask.float().sum(-1).unsqueeze_(-1))
+            sep_con = (output_con.last_hidden_state * con_mask.unsqueeze(-1).float())\
+                .sum(1).div(con_mask.float().sum(-1).unsqueeze_(-1))
 
-        # kw_con mean pooling logits
-        # kw_con_logits:(batch_4 * 1) .cat:(batch_4 * 1024)
-        kw_con_logits = self.kw_con_classifier(
-            self.dropout(torch.cat([all_kw, sep_kw, all_con, sep_con], 0))
-        )
+            # kw_con mean pooling logits
+            # kw_con_logits:(batch_4 * 1) .cat:(batch_4 * 1024)
+            kw_con_logits = self.kw_con_classifier(
+                self.dropout(torch.cat([all_kw, sep_kw, all_con, sep_con], 0))
+            )
+        else:
+            # keyword_prompt encoding
+            output_all_keyword_prompt = self.encoder(keyword_prompt_ids, attention_mask_keyword_prompt, token_type_ids, return_dict=True)
+
+            if "pooler_output" in output_all_keyword_prompt.keys():
+                # logits_prompt_kw:(batch * 1024)
+                logits_prompt_kw = output_all_keyword_prompt.pooler_output
+            else:
+                logits_prompt_kw = output_all_keyword_prompt.last_hidden_state[:, 0]
+            # kw_con_logits:(batch_2 * 1) .cat:(batch_2 * 1024)
+            kw_con_logits = self.kw_con_classifier(
+                self.dropout(torch.cat([logits_prompt_kw], 0))
+            )
 
         # loss3
         # joint probability distribution
         # kw_con labels
         # batch_4
-        kw_con_labels = torch.cat([labels.new_ones(all_kw.size(0) * 2),
+        if not self.improvement:
+            kw_con_labels = torch.cat([labels.new_ones(all_kw.size(0) * 2),
                                    labels.new_zeros(all_con.size(0) * 2)], 0).float()
+        else:
+            kw_con_labels = torch.cat([labels.new_ones(logits_prompt_kw.size(0)),
+                                       labels.new_zeros(logits_prompt_kw.size(0))], 0).float()
 
         # prob_all:(batch * 2)
         prob_all = F.log_softmax(logits_all, -1).view(-1, self.label_num)

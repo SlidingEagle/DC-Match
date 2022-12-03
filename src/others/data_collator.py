@@ -89,7 +89,7 @@ class DataCollator(DataCollatorWithPadding):
             keyword_sentence_list.append(keyword_sentence)
 
         # insert keywords into template_keyword
-        keyword_prompt_list = []
+        keyword_prompt_ids = []
         attention_mask_keyword_prompt = []
         for i in range(len(keyword_sentence_list)):
             keyword_prompt_sentence = []
@@ -105,7 +105,7 @@ class DataCollator(DataCollatorWithPadding):
                 keyword_prompt_sentence.append(encoded_template_keyword_dict['input_ids'][j])
             origin_prompt = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword_prompt_sentence))
             # print(origin_prompt)
-            keyword_prompt_list.append(keyword_prompt_sentence)
+            keyword_prompt_ids.append(keyword_prompt_sentence)
             attention_mask_keyword_prompt.append([1 for i in range(len(keyword_prompt_sentence))])
 
         batch['attention_mask'] = self._pad([x['attention_mask'] for x in features])
@@ -122,7 +122,7 @@ class DataCollator(DataCollatorWithPadding):
         else:
             batch['special_mask'] = []
 
-        batch['keyword_prompt'] = self._pad(keyword_prompt_list)
+        batch['keyword_prompt_ids'] = self._pad(keyword_prompt_ids)
         batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt)
 
 
