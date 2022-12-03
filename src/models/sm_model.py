@@ -56,7 +56,7 @@ class Model(nn.Module):
         return self
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
-                keyword_mask, context_mask, special_mask):
+                keyword_mask, context_mask, special_mask, test):
 
         if not self.training and not self.debug:
             output_all = self.encoder(input_ids, attention_mask, token_type_ids, return_dict=True)

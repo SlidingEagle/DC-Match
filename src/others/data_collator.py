@@ -16,6 +16,9 @@ class DataCollator(DataCollatorWithPadding):
         rtn_data = [d + [self.pad_id] * (width - len(d)) for d in data]
         return torch.tensor(rtn_data, dtype=dtype)
 
+    def handle_special_token(self, token_list):
+        return [item.replace("Ġ", "") for item in token_list]
+
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         """
@@ -52,5 +55,60 @@ class DataCollator(DataCollatorWithPadding):
             batch['special_mask'] = self._pad([x['special_mask'] for x in features])
         else:
             batch['special_mask'] = []
+
+
+        # process template sentence
+        template_keyword = "represent factual information ."
+        template_intent = "convey abstract concepts and ideas ."
+        encoded_template_keyword_dict = self.tokenizer(template_keyword,
+                                                       truncation=True,
+                                                       max_length=150,
+                                                       return_token_type_ids=True)
+        origin_template_keyword = self.tokenizer.convert_ids_to_tokens(encoded_template_keyword_dict['input_ids'])
+        if "chinese" not in self.args.model:
+            origin_template_keyword = self.handle_special_token(origin_template_keyword)
+
+        # get id of <cls>, <sep>, 'and', ','
+        id_cls = self.tokenizer.cls_token
+        id_sep = self.tokenizer.sep_token
+        id_and = self.tokenizer('and', truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
+        id_comma = self.tokenizer(',', truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
+
+        # extract keywords from batch
+        keyword_sentence_list = []
+        for i in range(len(features)):
+            keyword_sentence = []
+            keyword_mask = features[i]['keyword_mask']
+            input_ids = features[i]['input_ids']
+            origin_sentence = self.tokenizer.convert_ids_to_tokens(torch.tensor(input_ids))
+            # print(origin_sentence)
+
+            # 'for' loop of one sentence
+            j = 0
+            while j < len(keyword_mask):
+                if keyword_mask[j] == 1:
+                    # find a keyword
+                    keyword = []
+                    for k in range(j, len(keyword_mask)):
+                        # break until keyword_mask == 0
+                        if keyword_mask[k] == 0:
+                            break
+                        keyword.append(input_ids[k])
+                    keyword_sentence.append(keyword)
+                    origin_keyword = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword))
+                    # print(origin_keyword)
+                    # add the length of keyword
+                    j += len(keyword)
+                else:
+                    j += 1
+            keyword_sentence_list.append(keyword_sentence)
+
+        # insert keywords into template_keyword
+        keyword_prompt_list = []
+        # for i in range(len(keyword_sentence_list)):
+
+
+
+
 
         return batch
