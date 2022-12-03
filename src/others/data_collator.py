@@ -42,21 +42,6 @@ class DataCollator(DataCollatorWithPadding):
             return_tensors=self.return_tensors,
         )
 
-        batch['attention_mask'] = self._pad([x['attention_mask'] for x in features])
-        if "keyword_mask" in features[0].keys():
-            batch['keyword_mask'] = self._pad([x['keyword_mask'] for x in features])
-        else:
-            batch['keyword_mask'] = []
-        if "context_mask" in features[0].keys():
-            batch['context_mask'] = self._pad([x['context_mask'] for x in features])
-        else:
-            batch['context_mask'] = []
-        if "special_mask" in features[0].keys():
-            batch['special_mask'] = self._pad([x['special_mask'] for x in features])
-        else:
-            batch['special_mask'] = []
-
-
         # process template sentence
         template_keyword = "represent factual information ."
         template_intent = "convey abstract concepts and ideas ."
@@ -69,8 +54,8 @@ class DataCollator(DataCollatorWithPadding):
             origin_template_keyword = self.handle_special_token(origin_template_keyword)
 
         # get id of <cls>, <sep>, 'and', ','
-        id_cls = self.tokenizer.cls_token
-        id_sep = self.tokenizer.sep_token
+        id_cls = self.tokenizer(self.tokenizer.cls_token, truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
+        id_sep = self.tokenizer(self.tokenizer.sep_token, truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
         id_and = self.tokenizer('and', truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
         id_comma = self.tokenizer(',', truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
 
@@ -105,10 +90,40 @@ class DataCollator(DataCollatorWithPadding):
 
         # insert keywords into template_keyword
         keyword_prompt_list = []
-        # for i in range(len(keyword_sentence_list)):
+        attention_mask_keyword_prompt = []
+        for i in range(len(keyword_sentence_list)):
+            keyword_prompt_sentence = []
+            attention_mask_keyword_prompt_sentence = []
+            keyword_prompt_sentence.append(id_cls)
+            # insert keywords
+            for j in range(len(keyword_sentence_list[i])):
+                keyword_prompt_sentence.extend(keyword_sentence_list[i][j])
+                if j != len(keyword_sentence_list[i])-1:
+                    keyword_prompt_sentence.append(id_comma)
+            # insert template
+            for j in range(1, len(encoded_template_keyword_dict['input_ids'])):
+                keyword_prompt_sentence.append(encoded_template_keyword_dict['input_ids'][j])
+            origin_prompt = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword_prompt_sentence))
+            # print(origin_prompt)
+            keyword_prompt_list.append(keyword_prompt_sentence)
+            attention_mask_keyword_prompt.append([1 for i in range(len(keyword_prompt_sentence))])
 
+        batch['attention_mask'] = self._pad([x['attention_mask'] for x in features])
+        if "keyword_mask" in features[0].keys():
+            batch['keyword_mask'] = self._pad([x['keyword_mask'] for x in features])
+        else:
+            batch['keyword_mask'] = []
+        if "context_mask" in features[0].keys():
+            batch['context_mask'] = self._pad([x['context_mask'] for x in features])
+        else:
+            batch['context_mask'] = []
+        if "special_mask" in features[0].keys():
+            batch['special_mask'] = self._pad([x['special_mask'] for x in features])
+        else:
+            batch['special_mask'] = []
 
-
+        batch['keyword_prompt'] = self._pad(keyword_prompt_list)
+        batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt)
 
 
         return batch
