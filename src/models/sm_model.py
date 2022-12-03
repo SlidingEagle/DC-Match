@@ -57,7 +57,9 @@ class Model(nn.Module):
         return self
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
-                keyword_mask, context_mask, special_mask, keyword_prompt_ids, attention_mask_keyword_prompt):
+                keyword_mask, context_mask, special_mask,
+                keyword_prompt_ids, attention_mask_keyword_prompt,
+                intent_prompt_ids, attention_mask_intent_prompt):
 
         if not self.training and not self.debug:
             output_all = self.encoder(input_ids, attention_mask, token_type_ids, return_dict=True)
@@ -120,17 +122,19 @@ class Model(nn.Module):
                 self.dropout(torch.cat([all_kw, sep_kw, all_con, sep_con], 0))
             )
         else:
-            # keyword_prompt encoding
+            # keyword_prompt & intent_prompt encoding
             output_all_keyword_prompt = self.encoder(keyword_prompt_ids, attention_mask_keyword_prompt, token_type_ids, return_dict=True)
+            output_all_intent_prompt = self.encoder(intent_prompt_ids, attention_mask_intent_prompt, token_type_ids, return_dict=True)
 
             if "pooler_output" in output_all_keyword_prompt.keys():
-                # logits_prompt_kw:(batch * 1024)
+                # logits_prompt_kw & logits_prompt_intent:(batch * 1024)
                 logits_prompt_kw = output_all_keyword_prompt.pooler_output
+                logits_prompt_intent = output_all_intent_prompt.pooler_output
             else:
-                logits_prompt_kw = output_all_keyword_prompt.last_hidden_state[:, 0]
+                logits_prompt_intent = output_all_intent_prompt.last_hidden_state[:, 0]
             # kw_con_logits:(batch_2 * 1) .cat:(batch_2 * 1024)
             kw_con_logits = self.kw_con_classifier(
-                self.dropout(torch.cat([logits_prompt_kw], 0))
+                self.dropout(torch.cat([logits_prompt_kw, logits_prompt_intent], 0))
             )
 
         # loss3

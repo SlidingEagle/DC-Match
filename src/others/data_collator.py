@@ -12,7 +12,7 @@ class DataCollator(DataCollatorWithPadding):
 
     def _pad(self, data, width=-1, dtype=torch.long):
         if (width == -1):
-            width = max(len(d) for d in data)
+            width = max(len(d) for d in data) + 5
         rtn_data = [d + [self.pad_id] * (width - len(d)) for d in data]
         return torch.tensor(rtn_data, dtype=dtype)
 
@@ -49,9 +49,15 @@ class DataCollator(DataCollatorWithPadding):
                                                        truncation=True,
                                                        max_length=150,
                                                        return_token_type_ids=True)
+        encoded_template_intent_dict = self.tokenizer(template_intent,
+                                                       truncation=True,
+                                                       max_length=150,
+                                                       return_token_type_ids=True)
         origin_template_keyword = self.tokenizer.convert_ids_to_tokens(encoded_template_keyword_dict['input_ids'])
+        origin_template_intent = self.tokenizer.convert_ids_to_tokens(encoded_template_intent_dict['input_ids'])
         if "chinese" not in self.args.model:
             origin_template_keyword = self.handle_special_token(origin_template_keyword)
+            origin_template_intent = self.handle_special_token(origin_template_intent)
 
         # get id of <cls>, <sep>, 'and', ','
         id_cls = self.tokenizer(self.tokenizer.cls_token, truncation=True, max_length=150, return_token_type_ids=True)['input_ids'][1]
@@ -66,7 +72,6 @@ class DataCollator(DataCollatorWithPadding):
             keyword_mask = features[i]['keyword_mask']
             input_ids = features[i]['input_ids']
             origin_sentence = self.tokenizer.convert_ids_to_tokens(torch.tensor(input_ids))
-            # print(origin_sentence)
 
             # 'for' loop of one sentence
             j = 0
@@ -81,7 +86,6 @@ class DataCollator(DataCollatorWithPadding):
                         keyword.append(input_ids[k])
                     keyword_sentence.append(keyword)
                     origin_keyword = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword))
-                    # print(origin_keyword)
                     # add the length of keyword
                     j += len(keyword)
                 else:
@@ -92,9 +96,7 @@ class DataCollator(DataCollatorWithPadding):
         keyword_prompt_ids = []
         attention_mask_keyword_prompt = []
         for i in range(len(keyword_sentence_list)):
-            keyword_prompt_sentence = []
-            attention_mask_keyword_prompt_sentence = []
-            keyword_prompt_sentence.append(id_cls)
+            keyword_prompt_sentence = [id_cls]
             # insert keywords
             for j in range(len(keyword_sentence_list[i])):
                 keyword_prompt_sentence.extend(keyword_sentence_list[i][j])
@@ -103,10 +105,54 @@ class DataCollator(DataCollatorWithPadding):
             # insert template
             for j in range(1, len(encoded_template_keyword_dict['input_ids'])):
                 keyword_prompt_sentence.append(encoded_template_keyword_dict['input_ids'][j])
-            origin_prompt = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword_prompt_sentence))
-            # print(origin_prompt)
+            origin_keyword_prompt = self.tokenizer.convert_ids_to_tokens(torch.tensor(keyword_prompt_sentence))
             keyword_prompt_ids.append(keyword_prompt_sentence)
             attention_mask_keyword_prompt.append([1 for i in range(len(keyword_prompt_sentence))])
+
+        # extract intent from batch
+        intent_sentence_list = []
+        for i in range(len(features)):
+            intent_sentence = []
+            intent_mask = features[i]['context_mask']
+            input_ids = features[i]['input_ids']
+            origin_sentence = self.tokenizer.convert_ids_to_tokens(torch.tensor(input_ids))
+
+            # 'for' loop of one sentence
+            j = 0
+            while j < len(intent_mask):
+                if intent_mask[j] == 1:
+                    # find a keyword
+                    intent = []
+                    for k in range(j, len(intent_mask)):
+                        # break until keyword_mask == 0
+                        if intent_mask[k] == 0:
+                            break
+                        intent.append(input_ids[k])
+                    intent_sentence.append(intent)
+                    origin_intent = self.tokenizer.convert_ids_to_tokens(torch.tensor(intent))
+                    # add the length of intent
+                    j += len(intent)
+                else:
+                    j += 1
+            intent_sentence_list.append(intent_sentence)
+
+        # insert keywords into template_keyword
+        intent_prompt_ids = []
+        attention_mask_intent_prompt = []
+        for i in range(len(intent_sentence_list)):
+            intent_prompt_sentence = [id_cls]
+            # insert intent
+            for j in range(len(intent_sentence_list[i])):
+                intent_prompt_sentence.extend(intent_sentence_list[i][j])
+                if j != len(intent_sentence_list[i]) - 1:
+                    intent_prompt_sentence.append(id_comma)
+            # insert template
+            for j in range(1, len(encoded_template_intent_dict['input_ids'])):
+                intent_prompt_sentence.append(encoded_template_intent_dict['input_ids'][j])
+            origin_intent_prompt = self.tokenizer.convert_ids_to_tokens(torch.tensor(intent_prompt_sentence))
+            intent_prompt_ids.append(intent_prompt_sentence)
+            attention_mask_intent_prompt.append([1 for i in range(len(intent_prompt_sentence))])
+
 
         batch['attention_mask'] = self._pad([x['attention_mask'] for x in features])
         if "keyword_mask" in features[0].keys():
@@ -122,8 +168,14 @@ class DataCollator(DataCollatorWithPadding):
         else:
             batch['special_mask'] = []
 
-        batch['keyword_prompt_ids'] = self._pad(keyword_prompt_ids)
-        batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt)
+        new_width = batch['attention_mask'].shape[1]
 
+        batch['input_ids'] = self._pad(batch['input_ids'].tolist(), new_width)
+        batch['token_type_ids'] = self._pad(batch['token_type_ids'].tolist(), new_width)
+
+        batch['keyword_prompt_ids'] = self._pad(keyword_prompt_ids, new_width)
+        batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt, new_width)
+        batch['intent_prompt_ids'] = self._pad(intent_prompt_ids, new_width)
+        batch['attention_mask_intent_prompt'] = self._pad(attention_mask_intent_prompt, new_width)
 
         return batch
