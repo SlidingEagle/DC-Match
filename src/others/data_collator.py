@@ -2,7 +2,7 @@ from transformers.data.data_collator import DataCollatorWithPadding
 from typing import Any, Dict, List
 import torch
 
-from models.global_config import global_config
+from config.global_config import global_config
 
 
 class DataCollator(DataCollatorWithPadding):

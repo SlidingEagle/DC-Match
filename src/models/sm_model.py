@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModel, AutoConfig
 from transformers.modeling_outputs import SequenceClassifierOutput
-from models.global_config import global_config
+from config.global_config import global_config
 
 class Model(nn.Module):
     def __init__(self, model_name, labels, loss_type=1, checkpoint=None, debug=False):
