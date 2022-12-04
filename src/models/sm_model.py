@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModel, AutoConfig
 from transformers.modeling_outputs import SequenceClassifierOutput
-
+from models.global_config import global_config
 
 class Model(nn.Module):
     def __init__(self, model_name, labels, loss_type=1, checkpoint=None, debug=False):
@@ -12,7 +12,7 @@ class Model(nn.Module):
         self.debug = debug
         self.config = AutoConfig.from_pretrained(model_name)
         self.loss_type = loss_type
-        self.improvement = True
+        self.improvement = global_config.improvement
 
         if "deberta" in model_name.lower() or "funnel" in model_name.lower():
             self.pooler = nn.Sequential(
@@ -57,9 +57,10 @@ class Model(nn.Module):
         return self
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
-                keyword_mask, context_mask, special_mask,
-                keyword_prompt_ids, attention_mask_keyword_prompt,
-                intent_prompt_ids, attention_mask_intent_prompt):
+                keyword_mask, context_mask, special_mask
+                # , keyword_prompt_ids, attention_mask_keyword_prompt,
+                # intent_prompt_ids, attention_mask_intent_prompt
+                ):
 
         if not self.training and not self.debug:
             output_all = self.encoder(input_ids, attention_mask, token_type_ids, return_dict=True)

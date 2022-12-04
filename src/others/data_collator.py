@@ -2,6 +2,8 @@ from transformers.data.data_collator import DataCollatorWithPadding
 from typing import Any, Dict, List
 import torch
 
+from models.global_config import global_config
+
 
 class DataCollator(DataCollatorWithPadding):
 
@@ -9,10 +11,14 @@ class DataCollator(DataCollatorWithPadding):
         super(DataCollator, self).__init__(tokenizer, padding)
         self.args = args
         self.pad_id = 0
+        self.improvement = global_config.improvement
 
     def _pad(self, data, width=-1, dtype=torch.long):
-        if (width == -1):
-            width = max(len(d) for d in data) + 5
+        if width == -1:
+            if self.improvement:
+                width = max(len(d) for d in data) + 5
+            else:
+                width = max(len(d) for d in data)
         rtn_data = [d + [self.pad_id] * (width - len(d)) for d in data]
         return torch.tensor(rtn_data, dtype=dtype)
 
@@ -168,14 +174,15 @@ class DataCollator(DataCollatorWithPadding):
         else:
             batch['special_mask'] = []
 
-        new_width = batch['attention_mask'].shape[1]
+        if self.improvement:
+            new_width = batch['attention_mask'].shape[1]
 
-        batch['input_ids'] = self._pad(batch['input_ids'].tolist(), new_width)
-        batch['token_type_ids'] = self._pad(batch['token_type_ids'].tolist(), new_width)
+            batch['input_ids'] = self._pad(batch['input_ids'].tolist(), new_width)
+            batch['token_type_ids'] = self._pad(batch['token_type_ids'].tolist(), new_width)
 
-        batch['keyword_prompt_ids'] = self._pad(keyword_prompt_ids, new_width)
-        batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt, new_width)
-        batch['intent_prompt_ids'] = self._pad(intent_prompt_ids, new_width)
-        batch['attention_mask_intent_prompt'] = self._pad(attention_mask_intent_prompt, new_width)
+            batch['keyword_prompt_ids'] = self._pad(keyword_prompt_ids, new_width)
+            batch['attention_mask_keyword_prompt'] = self._pad(attention_mask_keyword_prompt, new_width)
+            batch['intent_prompt_ids'] = self._pad(intent_prompt_ids, new_width)
+            batch['attention_mask_intent_prompt'] = self._pad(attention_mask_intent_prompt, new_width)
 
         return batch
