@@ -58,8 +58,8 @@ class Model(nn.Module):
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
                 keyword_mask, context_mask, special_mask
-                # , keyword_prompt_ids, attention_mask_keyword_prompt,
-                # intent_prompt_ids, attention_mask_intent_prompt
+                , keyword_prompt_ids, attention_mask_keyword_prompt,
+                intent_prompt_ids, attention_mask_intent_prompt
                 ):
 
         if not self.training and not self.debug:

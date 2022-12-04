@@ -153,26 +153,24 @@ All the processed datastes used in our work are available at [Google Drive](http
              year={2022}
     }
 
+## Run Our experiment
 * Training and Evaluation (Baseline)
 
     * MRPC
     ```
-    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.baseline.log
-    ```
-
-    * QQP
-    ```
-    python -u src/main.py -baseline -task qqp -model roberta-large -num_labels 2 -batch_size 16 -accum_count 4 -test_batch_size 128 >> logs/qqp.roberta_large.baseline.log
+    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.baseline.log
     ```
 
 * Training and Evaluation (DC-Match)
 
     * MRPC
     ```
-    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match.log
     ```
 
-    * QQP
+* Training and Evaluation (DC-Match-improve)
+
+    * MRPC
     ```
-    python -u src/main.py -task qqp -model roberta-large -num_labels 2 -batch_size 16 -accum_count 4 -test_batch_size 128 >> logs/qqp.roberta_large.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match_improve.log
     ```

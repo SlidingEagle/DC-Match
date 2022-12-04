@@ -16,7 +16,7 @@ class DataCollator(DataCollatorWithPadding):
     def _pad(self, data, width=-1, dtype=torch.long):
         if width == -1:
             if self.improvement:
-                width = max(len(d) for d in data) + 5
+                width = max(len(d) for d in data) + 15
             else:
                 width = max(len(d) for d in data)
         rtn_data = [d + [self.pad_id] * (width - len(d)) for d in data]
