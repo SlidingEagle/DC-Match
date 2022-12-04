@@ -162,64 +162,17 @@ All the processed datastes used in our work are available at [Google Drive](http
 
     * QQP
     ```
-    PYTHONPATH=. python -u src/main.py \
-        -baseline \
-        -task qqp \
-        -model roberta-large \
-        -num_labels 2 \
-        -batch_size 16 \
-        -accum_count 4 \
-        -test_batch_size 128 \
-        >> logs/qqp.roberta_large.baseline.log
-    ```
-
-    * Medical
-    ```
-    PYTHONPATH=. python -u src/main.py \
-        -baseline \
-        -task medical \
-        -model hfl/chinese-roberta-wwm-ext-large \
-        -num_labels 3 \
-        -batch_size 16 \
-        -accum_count 4 \
-        -test_batch_size 128 \
-        >> logs/medical.roberta_large.baseline.log
+    python -u src/main.py -baseline -task qqp -model roberta-large -num_labels 2 -batch_size 16 -accum_count 4 -test_batch_size 128 >> logs/qqp.roberta_large.baseline.log
     ```
 
 * Training and Evaluation (DC-Match)
 
     * MRPC
     ```
-    PYTHONPATH=. python -u src/main.py \
-        -task mrpc \
-        -model roberta-large \
-        -num_labels 2 \
-        -batch_size 16 \
-        -accum_count 1 \
-        -test_batch_size 128 \
-        >> logs/mrpc.roberta_large.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.log
     ```
 
     * QQP
     ```
-    PYTHONPATH=. python -u src/main.py \
-        -task qqp \
-        -model roberta-large \
-        -num_labels 2 \
-        -batch_size 16 \
-        -accum_count 4 \
-        -test_batch_size 128 \
-        >> logs/qqp.roberta_large.log
-    ```
-
-    * Medical
-    ```
-    PYTHONPATH=. python -u src/main.py \
-        -task medical \
-        -model hfl/chinese-roberta-wwm-ext-large \
-        -num_labels 3 \
-        -batch_size 16 \
-        -accum_count 4 \
-        -test_batch_size 128 \
-        >> logs/medical.roberta_large.log
+    python -u src/main.py -task qqp -model roberta-large -num_labels 2 -batch_size 16 -accum_count 4 -test_batch_size 128 >> logs/qqp.roberta_large.log
     ```
