@@ -56,6 +56,7 @@ if __name__ == '__main__':
     parser.add_argument("-test_from", default='', type=str)
     parser.add_argument("-train_from", default='', type=str)
     parser.add_argument("-debug", type=str2bool, nargs='?', const=True, default=False)
+    parser.add_argument("-checkpoint", default='', type=int)
 
     args = parser.parse_args()
     args.gpu_ranks = [int(i) for i in range(len(args.visible_gpus.split(',')))]
@@ -66,13 +67,14 @@ if __name__ == '__main__':
     args.model_path = args.model_path + '/' + args.task + '/' + model_name
     args.result_path = args.result_path + '/' + args.task + '/' + model_name + '.txt'
     args.data_path = args.data_path + '/' + args.task + '/' + model_name + '.save'
+    args.test_from = args.test_from + "checkpoint-" + str(args.checkpoint)
 
     from train import train
     from test import test
 
-    if (args.mode == 'train'):
+    if args.mode == 'train':
         train(args)
-    elif (args.mode == 'test'):
+    elif args.mode == 'test':
         test(args)
     else:
         print("Undefined mode! Please check input.")
