@@ -158,39 +158,41 @@ All the processed datastes used in our work are available at [Google Drive](http
 
     * MRPC
     ```
-    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.baseline.log
+    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.baseline.log
     ```
 
 * Training and Evaluation (DC-Match)
 
     * MRPC
     ```
-    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match.log
     ```
 
 * Training and Evaluation (DC-Match-improve)
 
     * MRPC
     ```
-    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match_improve.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 >> logs/mrpc.roberta_large.DC_Match_improve.log
     ```
+
+
 * Testing (Baseline)
 
     * MRPC
     ```
-    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-baseline/ -checkpoint 5502 >> logs/test/mrpc.roberta_large.baseline.log
+    python -u src/main.py -baseline -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-baseline/ -checkpoint xxx >> logs/test/mrpc.roberta_large.baseline.log
     ```
 
 * Testing (DC-Match)
 
     * MRPC
     ```
-    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-DC-Match/ -checkpoint 7336 >> logs/test/mrpc.roberta_large.DC-Match.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-DC-Match/ -checkpoint xxx >> logs/test/mrpc.roberta_large.DC-Match.log
     ```
 
 * Testing (DC-Match-improve)
 
     * MRPC
     ```
-    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 4 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-DC-Match-improve/ -checkpoint xxx >> logs/test/mrpc.roberta_large.DC-Match-improve.log
+    python -u src/main.py -task mrpc -model roberta-large -num_labels 2 -batch_size 16 -accum_count 1 -test_batch_size 128 -mode test -test_from models/mrpc/roberta-large-DC-Match-improve/ -checkpoint xxx >> logs/test/mrpc.roberta_large.DC-Match-improve.log
     ```

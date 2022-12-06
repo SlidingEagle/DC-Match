@@ -58,8 +58,8 @@ class Model(nn.Module):
 
     def forward(self, input_ids, token_type_ids, attention_mask, labels,
                 keyword_mask, context_mask, special_mask
-                , keyword_prompt_ids, attention_mask_keyword_prompt,
-                intent_prompt_ids, attention_mask_intent_prompt
+                , keyword_prompt_ids=None, attention_mask_keyword_prompt=None,
+                intent_prompt_ids=None, attention_mask_intent_prompt=None
                 ):
 
         if not self.training and not self.debug:
@@ -132,6 +132,7 @@ class Model(nn.Module):
                 logits_prompt_kw = output_all_keyword_prompt.pooler_output
                 logits_prompt_intent = output_all_intent_prompt.pooler_output
             else:
+                logits_prompt_kw = output_all_keyword_prompt.last_hidden_state[:, 0]
                 logits_prompt_intent = output_all_intent_prompt.last_hidden_state[:, 0]
             # kw_con_logits:(batch_2 * 1) .cat:(batch_2 * 1024)
             kw_con_logits = self.kw_con_classifier(
