@@ -31,7 +31,10 @@ class Model(nn.Module):
         self.encoder = AutoModel.from_pretrained(model_name)
 
         if checkpoint is not None:
-            cp = torch.load(checkpoint, map_location=lambda storage, loc: storage)
+            path = checkpoint + "/pytorch_model.bin"
+            # state_dict = torch.load(path)
+            # print("type" + str(type(state_dict)))
+            cp = torch.load(path, map_location=lambda storage, loc: storage)
             self.load_state_dict(cp, strict=True)
 
     def _init_weights(self, module):

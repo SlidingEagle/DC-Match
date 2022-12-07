@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     # Model args
     parser.add_argument("-baseline", type=str2bool, nargs='?', const=True, default=False)
-    parser.add_argument("-model", default="roberta-large", type=str)
+    parser.add_argument("-model", default="roberta-base", type=str)
     parser.add_argument("-num_labels", default=2, type=int)
 
     # Training process args
